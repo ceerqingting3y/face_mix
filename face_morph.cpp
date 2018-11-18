@@ -35,50 +35,10 @@
 #include <dlib/opencv.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
+#include "src/delaunay.hpp"
+#include "src/utils.hpp"
 using namespace dlib;
 using namespace std;
-
-std::vector<cv::Point2f> landmarkToCV(full_object_detection landmarks) {
-  std::vector<cv::Point2f> tmp;
-  for (int i = 0; i < landmarks.num_parts(); i++) {
-    point landmark = landmarks.part(i);
-    tmp.push_back(cv::Point2f(landmark.x(), landmark.y()));
-  }
-  cout << "tmp size : " << tmp.size() << endl;
-  return tmp;
-}
-
-static void draw_delaunay(cv::Mat& img, cv::Subdiv2D& subdiv) {
-  cv::Scalar delaunay_color(255, 255, 255);
-  std::vector<cv::Vec6f> triangleList;
-  subdiv.getTriangleList(triangleList);
-  std::vector<cv::Point> pt(3);
-  cv::Size size = img.size();
-  cv::Rect rect(0, 0, size.width, size.height);
-
-  for (size_t i = 0; i < triangleList.size(); i++) {
-    cv::Vec6f t = triangleList[i];
-    pt[0] = cv::Point(cvRound(t[0]), cvRound(t[1]));
-    pt[1] = cv::Point(cvRound(t[2]), cvRound(t[3]));
-    pt[2] = cv::Point(cvRound(t[4]), cvRound(t[5]));
-
-    // Draw rectangles completely inside the image.
-    if (rect.contains(pt[0]) && rect.contains(pt[1]) && rect.contains(pt[2])) {
-      cv::line(img, pt[0], pt[1], delaunay_color, 1, CV_AA, 0);
-      cv::line(img, pt[1], pt[2], delaunay_color, 1, CV_AA, 0);
-      cv::line(img, pt[2], pt[0], delaunay_color, 1, CV_AA, 0);
-    }
-  }
-}
-
-cv::Subdiv2D get_delaunay(std::vector<cv::Point2f>& landmarks, cv::Rect rect) {
-  cv::Subdiv2D delaunay(rect);
-  for (int i = 0; i < landmarks.size(); i++) {
-    delaunay.insert(landmarks[i]);
-  }
-  return delaunay;
-}
 
 int main() {
   try {
@@ -112,14 +72,14 @@ int main() {
       full_object_detection face_landmarks;
       if (faces.size() > 0) {
         face_landmarks = pose_model(cimg, faces[0]);
-        auto landmarks = landmarkToCV(face_landmarks);
+        auto landmarks = vectorize_landmarks(face_landmarks);
         auto delaunay = get_delaunay(landmarks, rect);
         draw_delaunay(img, delaunay);
         // Display it all on the screen
         win.clear_overlay();
         win.set_image(cimg);
         win.add_overlay(render_face_detections(face_landmarks));
-        cv::waitKey(1000);
+        cv::waitKey(30);
       }
     }
   } catch (serialization_error& e) {
