@@ -37,6 +37,14 @@
 
 using namespace dlib;
 using namespace std;
+std::vector<cv::Point2f> landmarkToCV(full_object_detection landmarks) {
+  std::vector<cv::Point2f> tmp;
+  for (int i = 0; i < landmarks.num_parts(); i++) {
+    point landmark = landmarks.part(i);
+    tmp.push_back(cv::Point2f(landmark.x(), landmark.y()));
+  }
+  return tmp;
+}
 
 int main() {
   try {
@@ -71,14 +79,20 @@ int main() {
       // Detect faces
       std::vector<rectangle> faces = detector(cimg);
       // Find the pose of each face.
-      std::vector<full_object_detection> shapes;
-      for (unsigned long i = 0; i < faces.size(); ++i)
-        shapes.push_back(pose_model(cimg, faces[i]));
-
+      full_object_detection face_landmarks;
+      if (faces.size() > 0) {
+        face_landmarks = pose_model(cimg, faces[0]);
+      }
+      for (int i = 0; i < face_landmarks.num_parts(); i++) {
+        point landmark = face_landmarks.part(i);
+        cout << landmark.x() << " " << landmark.y() << endl;
+      }
+      auto landmarks = landmarkToCV(face_landmarks);
       // Display it all on the screen
       win.clear_overlay();
       win.set_image(cimg);
-      win.add_overlay(render_face_detections(shapes));
+      win.add_overlay(render_face_detections(face_landmarks));
+      cv::waitKey(0);
     }
   } catch (serialization_error& e) {
     cout << "You need dlib's default face landmarking model file to run this "
