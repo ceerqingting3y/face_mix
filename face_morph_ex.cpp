@@ -77,11 +77,11 @@ void morphTriangle(Mat &img1, Mat &img2, Mat &img, vector<Point2f> &t1,
 }
 
 int main(int argc, char **argv) {
-  string filename1("hillary_clinton.jpg");
-  string filename2("ted_cruz.jpg");
+  string filename1("wagner.jpg");
+  string filename2("mona.jpg");
 
   // alpha controls the degree of morph
-  double alpha = 0.8;
+  double alpha = 0.6;
 
   // Read input images
   Mat img1 = imread(filename1);
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
   }
 
   // Read triangle indices
-  ifstream ifs("tri.txt");
+  ifstream ifs("delaunay.txt");
   int x, y, z;
 
   while (ifs >> x >> y >> z) {
@@ -136,6 +136,7 @@ int main(int argc, char **argv) {
 
   // Display Result
   imshow("Morphed Face", imgMorph / 255.0);
+  imwrite("wagnelisa.jpg", imgMorph);
   waitKey(0);
 
   return 0;
