@@ -5,3 +5,4 @@
 using namespace dlib;
 using namespace std;
 std::vector<cv::Point2f> vectorize_landmarks(full_object_detection landmarks);
+cv::Point2f center_of_points(std::vector<cv::Point2f> points);
