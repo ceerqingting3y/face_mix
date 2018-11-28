@@ -5,6 +5,7 @@
 #include <iostream>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/opencv.hpp>
 
 using namespace cv;
 using namespace std;
@@ -33,47 +34,52 @@ void applyAffineTransform(Mat &warpImage, Mat &src, vector<Point2f> &srcTri,
 }
 
 // Warps and alpha blends triangular regions from img1 and img2 to img
-void morphTriangle(Mat &img1, Mat &img2, Mat &img, vector<Point2f> &t1,
-                   vector<Point2f> &t2, vector<Point2f> &t, double alpha) {
+void morphFaces(Mat &img1, Mat &img2, vector<Point2f> &t1, vector<Point2f> &t2,
+                double alpha) {
   // Find bounding rectangle for each triangle
-  Rect r = boundingRect(t);
+
   Rect r1 = boundingRect(t1);
   Rect r2 = boundingRect(t2);
 
   // Offset points by left top corner of the respective rectangles
-  vector<Point2f> t1Rect, t2Rect, tRect;
-  vector<Point> tRectInt;
+  vector<Point2f> triangle1, triangle2;
+  vector<Point> triangle2Int;
   for (int i = 0; i < 3; i++) {
-    tRect.push_back(Point2f(t[i].x - r.x, t[i].y - r.y));
-    tRectInt.push_back(
-        Point(t[i].x - r.x, t[i].y - r.y));  // for fillConvexPoly
-
-    t1Rect.push_back(Point2f(t1[i].x - r1.x, t1[i].y - r1.y));
-    t2Rect.push_back(Point2f(t2[i].x - r2.x, t2[i].y - r2.y));
+    triangle1.push_back(Point2f(t1[i].x - r1.x, t1[i].y - r1.y));
+    triangle2.push_back(Point2f(t2[i].x - r2.x, t2[i].y - r2.y));
+    triangle2Int.push_back(
+        Point(t2[i].x - r2.x, t2[i].y - r2.y));  // for fillConvexPoly
   }
 
   // Get mask by filling triangle
-  Mat mask = Mat::zeros(r.height, r.width, CV_32FC3);
-  fillConvexPoly(mask, tRectInt, Scalar(1.0, 1.0, 1.0), 16, 0);
-
+  // Mat mask = Mat::ones(r2.height, r2.width, CV_8UC1) * 256;
+  Mat mask = Mat::zeros(r2.height, r2.width, CV_32FC3);
+  fillConvexPoly(mask, triangle2Int, Scalar(1.0, 1.0, 1.0), 16, 0);
+  mask.convertTo(mask, CV_8UC1, 256);
   // Apply warpImage to small rectangular patches
   Mat img1Rect, img2Rect;
   img1(r1).copyTo(img1Rect);
   img2(r2).copyTo(img2Rect);
 
-  Mat warpImage1 = Mat::zeros(r.height, r.width, img1Rect.type());
-  Mat warpImage2 = Mat::zeros(r.height, r.width, img2Rect.type());
+  Mat warpImage1 = Mat::zeros(r2.height, r2.width, img1Rect.type());
+  Mat warpImage2 = Mat::zeros(r2.height, r2.width, img2Rect.type());
 
-  applyAffineTransform(warpImage1, img1Rect, t1Rect, tRect);
-  applyAffineTransform(warpImage2, img2Rect, t2Rect, tRect);
-
+  applyAffineTransform(warpImage1, img1Rect, triangle1, triangle2);
+  warpImage2 = img2(r2);
   // Alpha blend rectangular patches
   Mat imgRect = (1.0 - alpha) * warpImage1 + alpha * warpImage2;
 
   // Copy triangular region of the rectangular patch to the output image
-  multiply(imgRect, mask, imgRect);
-  multiply(img(r), Scalar(1.0, 1.0, 1.0) - mask, img(r));
-  img(r) = img(r) + imgRect;
+  Mat output;
+  Point center = Point(r2.width / 2, r2.height / 2);
+  Mat m1, m2;
+  imgRect.convertTo(m1, CV_8UC3);
+  img2(r2).convertTo(m2, CV_8UC3);
+  seamlessClone(m1, m2, mask, center, output, NORMAL_CLONE);
+  img2(r2) = output;
+  // multiply(imgRect, mask, imgRect);
+  // multiply(img2(r2), Scalar(1.0, 1.0, 1.0) - mask, img2(r2));
+  // img2(r2) = img2(r2) + imgRect;
 }
 
 int main(int argc, char **argv) {
@@ -81,7 +87,7 @@ int main(int argc, char **argv) {
   string filename2("mona.jpg");
 
   // alpha controls the degree of morph
-  double alpha = 0.6;
+  double alpha = 0.1;
 
   // Read input images
   Mat img1 = imread(filename1);
@@ -112,9 +118,9 @@ int main(int argc, char **argv) {
   ifstream ifs("delaunay.txt");
   int x, y, z;
 
+  vector<Point2f> t1, t2, t;
   while (ifs >> x >> y >> z) {
     // Triangles
-    vector<Point2f> t1, t2, t;
 
     // Triangle corners for image 1.
     t1.push_back(points1[x]);
@@ -130,13 +136,12 @@ int main(int argc, char **argv) {
     t.push_back(points[x]);
     t.push_back(points[y]);
     t.push_back(points[z]);
-
-    morphTriangle(img1, img2, imgMorph, t1, t2, t, alpha);
+    morphFaces(img1, img2, t1, t2, alpha);
   }
 
   // Display Result
-  imshow("Morphed Face", imgMorph / 255.0);
-  imwrite("wagnelisa.jpg", imgMorph);
+  imshow("Morphed Face", img2 / 255.0);
+  imwrite("wagnelisa.jpg", img2);
   waitKey(0);
 
   return 0;
