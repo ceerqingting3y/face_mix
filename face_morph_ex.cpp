@@ -74,6 +74,7 @@ void morphFaces(Mat &img1, Mat &img2, Mat &output, Mat &allMask,
 
   // img2(r2) = output;
   multiply(imgRect, mask, imgRect);
+  multiply(output(r2), Scalar(1.0, 1.0, 1.0) - mask, output(r2));
   output(r2) = output(r2) + imgRect;
   allMask(r2) += allMask(r2) + mask;
 }
@@ -83,7 +84,7 @@ int main(int argc, char **argv) {
   string filename2("mona.jpg");
 
   // alpha controls the degree of morph
-  double alpha = 0.4;
+  double alpha = 0.9;
 
   // Read input images
   Mat img1 = imread(filename1);
@@ -91,7 +92,7 @@ int main(int argc, char **argv) {
   // convert Mat to float data type
   img1.convertTo(img1, CV_32F);
   img2.convertTo(img2, CV_32F);
-  Mat output = Mat::zeros(img2.size(), CV_32FC3);
+  Mat output = img2.clone();
   Mat mask = Mat::zeros(img2.size(), CV_32FC3);
 
   // empty average image
@@ -100,16 +101,6 @@ int main(int argc, char **argv) {
   // Read points
   std::vector<Point2f> points1 = readPoints(filename1 + ".txt");
   std::vector<Point2f> points2 = readPoints(filename2 + ".txt");
-  std::vector<Point2f> points;
-
-  // compute weighted average point coordinates
-  for (int i = 0; i < points1.size(); i++) {
-    float x, y;
-    x = (1 - alpha) * points1[i].x + alpha * points2[i].x;
-    y = (1 - alpha) * points1[i].y + alpha * points2[i].y;
-
-    points.push_back(Point2f(x, y));
-  }
 
   // Read triangle indices
   ifstream ifs("delaunay.txt");
@@ -117,7 +108,7 @@ int main(int argc, char **argv) {
 
   while (ifs >> x >> y >> z) {
     // Triangles
-    std::vector<Point2f> t1, t2, t;
+    std::vector<Point2f> t1, t2;
 
     // Triangle corners for image 1.
     t1.push_back(points1[x]);
@@ -129,10 +120,6 @@ int main(int argc, char **argv) {
     t2.push_back(points2[y]);
     t2.push_back(points2[z]);
 
-    // Triangle corners for morphed image.
-    t.push_back(points[x]);
-    t.push_back(points[y]);
-    t.push_back(points[z]);
     morphFaces(img1, img2, output, mask, t1, t2, alpha);
   }
 
