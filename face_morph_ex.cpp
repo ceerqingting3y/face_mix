@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
   string filename2("mona.jpg");
 
   // alpha controls the degree of morph
-  double alpha = 0.5;
+  double alpha = 1;
 
   // Read input images
   Mat src = imread(filename1);
