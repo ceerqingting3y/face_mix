@@ -11,3 +11,6 @@ target_link_libraries(face_morph dlib::dlib ${OpenCV_LIBS})
 
 add_executable(face_morph_ex face_morph_ex.cpp src/utils.cpp)
 target_link_libraries(face_morph_ex dlib::dlib ${OpenCV_LIBS} )
+
+add_executable(morph_video morph_video.cpp src/utils.cpp)
+target_link_libraries(morph_video dlib::dlib ${OpenCV_LIBS} )
