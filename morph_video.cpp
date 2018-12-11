@@ -70,10 +70,10 @@ void morphFaces(Mat &src, Mat &base, Mat &output, Mat &allMask,
                 std::vector<Point2f> &points1, std::vector<Point2f> &points2,
                 double alpha) {
   // Find bounding rectangle for each triangle
-  // Read triangle indices
+
+  // Choose equivalent triangles in each image
   ifstream ifs("delaunay.txt");
   int x, y, z;
-
   while (ifs >> x >> y >> z) {
     // Triangles
     std::vector<Point2f> t1, t2;
@@ -143,7 +143,7 @@ int main() {
     shape_predictor pose_model;
     deserialize("shape_predictor_68_face_landmarks.dat") >> pose_model;
 
-    // Grab and process frames until the main window is closed by the user.
+    // Grab and process frames until the\main window is closed by the user.
     while (!win.is_closed()) {
       // Grab a frame
       Mat src;
@@ -161,10 +161,10 @@ int main() {
       if (faces.size() > 0) {
         face_landmarks = pose_model(cimg, faces[0]);
         auto landmarks = vectorize_landmarks(face_landmarks);
-        double alpha = 0.3;
+        double alpha = 0.1;
 
         // Read input images
-        string filename2("hillary_clinton.jpg");
+        string filename2("ted_cruz.jpg");
         Mat base = imread(filename2);
         // convert Mat to float data type
         src.convertTo(src, CV_32F);
