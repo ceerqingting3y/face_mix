@@ -6,6 +6,9 @@
 using namespace cv;
 using namespace std;
 
+// from Andrey Smorodov
+// disponible at
+// https://stackoverflow.com/questions/20071854/wavelet-transform-in-opencv
 //--------------------------------
 // Wavelet transform
 //--------------------------------
