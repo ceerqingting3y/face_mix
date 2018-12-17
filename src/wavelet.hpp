@@ -6,4 +6,4 @@
 using namespace cv;
 using namespace std;
 
-static void cvHaarWavelet(Mat &src, Mat &dst, int NIter);
+void cvHaarWavelet(Mat &src, Mat &dst, int NIter);
