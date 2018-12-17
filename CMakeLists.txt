@@ -29,3 +29,6 @@ target_link_libraries(warp_to_happy dlib::dlib ${OpenCV_LIBS})
 
 add_executable(wavelet_sample wavelet_sample.cpp src/wavelet.cpp)
 target_link_libraries(wavelet_sample dlib::dlib ${OpenCV_LIBS})
+
+add_executable(write_delaunay write_delaunay.cpp src/delaunay.cpp src/utils.cpp)
+target_link_libraries(write_delaunay dlib::dlib ${OpenCV_LIBS})
