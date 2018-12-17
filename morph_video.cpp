@@ -161,7 +161,6 @@ int main() {
       if (faces.size() > 0) {
         face_landmarks = pose_model(cimg, faces[0]);
         auto landmarks = vectorize_landmarks(face_landmarks);
-        double alpha = 0.1;
 
         // Read input images
         string filename2("ted_cruz.jpg");
@@ -171,6 +170,8 @@ int main() {
         base.convertTo(base, CV_32F);
         Mat output = base.clone();
         Mat mask = Mat::zeros(base.size(), CV_32FC3);
+
+        double alpha = 0.1;
 
         // empty average image
         Mat imgMorph = Mat::zeros(src.size(), CV_32FC3);

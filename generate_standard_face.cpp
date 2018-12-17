@@ -59,7 +59,11 @@ Mat genMask(std::vector<Point> &points) {
 }
 
 int main(int argc, char **argv) {
-  string filename1("w_happy.jpg");
+  if (argc == 1) {
+    cerr << "Please provide the photo name" << endl;
+    return 1;
+  }
+  string filename1(argv[1]);
 
   // alpha controls the degree of morph
   double alpha = 1;
@@ -94,9 +98,10 @@ int main(int argc, char **argv) {
   write_points("avg_face", landmarks);
 
   Mat mask = genMask(landmarks);
-  Mat cropped = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
-  scaled.copyTo(cropped, mask);
-  imshow("cropped", cropped);
+  Mat cropped2 = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
+  scaled.copyTo(cropped2, mask);
+  imshow("cropped", cropped2);
+  imwrite("wagner_lindo.jpg", cropped2);
   // Read points
   dlib::assign_image(simg, cimg);
   //   dlib::extract_image_chips(simg, faces[0], cut_img);

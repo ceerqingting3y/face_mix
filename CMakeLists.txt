@@ -24,3 +24,14 @@ target_link_libraries(dwt dlib::dlib ${OpenCV_LIBS} )
 add_executable(morph_video morph_video.cpp src/utils.cpp)
 target_link_libraries(morph_video dlib::dlib ${OpenCV_LIBS} )
 
+<<<<<<< HEAD
+=======
+add_executable(generate_standard_face generate_standard_face.cpp src/delaunay.cpp src/utils.cpp)
+target_link_libraries(generate_standard_face dlib::dlib ${OpenCV_LIBS})
+
+add_executable(warp_to_happy warp_to_happy.cpp src/delaunay.cpp src/utils.cpp)
+target_link_libraries(warp_to_happy dlib::dlib ${OpenCV_LIBS})
+
+add_executable(wavelet_sample wavelet_sample.cpp src/wavelet.cpp)
+target_link_libraries(wavelet_sample dlib::dlib ${OpenCV_LIBS})
+>>>>>>> 9825ed808ae4f437ab7fef1cdfffaa38a61de4fb
