@@ -27,3 +27,9 @@ cv::Point2f center_of_points(std::vector<cv::Point2f> points) {
   avgy /= points.size();
   return cv::Point2f(avgx, avgy);
 }
+
+int clamp(int v, int a, int b) {
+  if (v < a) return a;
+  if (v > b) return b;
+  return v;
+}
