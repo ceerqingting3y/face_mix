@@ -12,20 +12,50 @@
 using namespace dlib;
 using namespace cv;
 using namespace std;
+
+const int IMG_SIZE = 80;
+
 // Read points stored in the text files
-std::vector<Point2f> write_points(string filename,
-                                  std::vector<cv::Point2f> points) {
+void write_points(string filename, std::vector<cv::Point> points) {
   ofstream ofs(filename);
   for (int i = 0; i < points.size(); i++) {
     ofs << points[i].x << " " << points[i].y << endl;
   }
-
-  return points;
 }
 
 static cv::Rect dlib_rect_to_cv(dlib::rectangle r) {
   return cv::Rect(cv::Point2i(r.left(), r.top()),
                   cv::Point2i(r.right() + 1, r.bottom() + 1));
+}
+
+Mat genMask(std::vector<Point> &points) {
+  // Find bounding rectangle for each triangle
+  // Read triangle indices
+  ifstream ifs("delaunay.txt");
+  int x, y, z;
+  Mat allMask = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
+  while (ifs >> x >> y >> z) {
+    // Triangles
+    std::vector<Point2f> t;
+
+    // Triangle corners for image 1.
+    t.push_back(points[x]);
+    t.push_back(points[y]);
+    t.push_back(points[z]);
+
+    // Offset points by left top corner of the respective rectangles
+    std::vector<Point> triangleInt;
+    for (int i = 0; i < 3; i++) {
+      triangleInt.push_back(Point(t[i].x, t[i].y));  // for fillConvexPoly
+    }
+
+    // Get mask by filling triangle
+    Mat mask = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
+    fillConvexPoly(mask, triangleInt, Scalar(255, 255, 255), 16, 0);
+    allMask = allMask + mask;
+  }
+  allMask.convertTo(allMask, CV_8UC3);
+  return allMask;
 }
 
 int main(int argc, char **argv) {
@@ -45,12 +75,12 @@ int main(int argc, char **argv) {
 
   full_object_detection face_landmarks;
 
-  // find a face and reformats it to the standard size of (80,80)
+  // find a face and reformats it to the standard size of (IMG_SIZE,IMG_SIZE)
   std::vector<dlib::rectangle> faces;
   faces = detector(cimg);
   Mat cropped = src(dlib_rect_to_cv(faces[0]));
   Mat scaled;
-  Size img_size(80, 80);
+  Size img_size(IMG_SIZE, IMG_SIZE);
   resize(cropped, scaled, img_size);
   imshow("scaled", scaled);
 
@@ -60,9 +90,13 @@ int main(int argc, char **argv) {
 
   image_window win;
   face_landmarks = pose_model(cimg, faces[0]);
-  auto landmarks = vectorize_landmarks(face_landmarks);
+  auto landmarks = int_vectorize_landmarks(face_landmarks);
   write_points("avg_face", landmarks);
 
+  Mat mask = genMask(landmarks);
+  Mat filtered = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
+  scaled.copyTo(filtered, mask);
+  imshow("filtered", filtered);
   // Read points
   dlib::assign_image(simg, cimg);
   //   dlib::extract_image_chips(simg, faces[0], cut_img);
