@@ -13,7 +13,7 @@ using namespace dlib;
 using namespace cv;
 using namespace std;
 
-const int IMG_SIZE = 80;
+const int IMG_SIZE = 160;
 
 // Read points stored in the text files
 void write_points(string filename, std::vector<cv::Point> points) {
@@ -94,9 +94,9 @@ int main(int argc, char **argv) {
   write_points("avg_face", landmarks);
 
   Mat mask = genMask(landmarks);
-  Mat filtered = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
-  scaled.copyTo(filtered, mask);
-  imshow("filtered", filtered);
+  Mat cropped = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
+  scaled.copyTo(cropped, mask);
+  imshow("cropped", cropped);
   // Read points
   dlib::assign_image(simg, cimg);
   //   dlib::extract_image_chips(simg, faces[0], cut_img);
