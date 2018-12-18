@@ -69,12 +69,12 @@ void applyAffineTransform(Mat &warpImage, Mat &src,
 }
 
 // Warps and alpha blends triangular regions from src and base to img
-void morphFaces(Mat &src, Mat &output, std::vector<Point2f> &points1,
-                std::vector<Point2f> &points2) {
+void warpFaces(Mat &src, Mat &output, std::vector<Point2f> &points1,
+               std::vector<Point2f> &points2) {
   // Find bounding rectangle for each triangle
 
   // Choose equivalent triangles in each image
-  ifstream ifs("delaunay.txt");
+  ifstream ifs("jpg/baseline.txt");
   int x, y, z;
   while (ifs >> x >> y >> z) {
     // Triangles
@@ -120,7 +120,7 @@ int main() {
   // Grab a frame
   Mat src;
   src = imread("wagner_neutral.jpg");
-
+  Mat shouting = imread("wagner_lindo.jpg");
   // Detect faces
 
   // Read input images
@@ -130,7 +130,14 @@ int main() {
   // Read points
   std::vector<Point2f> points1 = readPoints("avg_face_neutral.txt");
   std::vector<Point2f> points2 = readPoints("avg_face_shouting.txt");
-  morphFaces(src, output, points1, points2);
+  warpFaces(src, output, points1, points2);
+  Mat difference;
+
+  cout << shouting.size() << " " << output.size() << endl;
+  absdiff(shouting, output, difference);
+  imshow("difference", difference);
+  imshow("neutral", src);
+  imshow("shouting", shouting);
   imshow("Morphed Face", output);
   // Display it all on the screen
   waitKey(0);
