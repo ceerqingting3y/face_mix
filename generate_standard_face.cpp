@@ -31,7 +31,7 @@ static cv::Rect dlib_rect_to_cv(dlib::rectangle r) {
 Mat genMask(std::vector<Point> &points) {
   // Find bounding rectangle for each triangle
   // Read triangle indices
-  ifstream ifs("delaunay.txt");
+  ifstream ifs("jpg/baseline.txt");
   int x, y, z;
   Mat allMask = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
   while (ifs >> x >> y >> z) {
@@ -59,12 +59,12 @@ Mat genMask(std::vector<Point> &points) {
 }
 
 int main(int argc, char **argv) {
-  if (argc == 1) {
-    cerr << "Please provide the photo name" << endl;
+  if (argc == 2) {
+    cerr << "format <srcImgnName> <outputImg>" << endl;
     return 1;
   }
   string filename1(argv[1]);
-
+  string outImg(argv[2]);
   // alpha controls the degree of morph
   double alpha = 1;
   // Read input images
@@ -90,18 +90,17 @@ int main(int argc, char **argv) {
 
   // update dlib variables
   cimg = cv_image<bgr_pixel>(scaled);
-  faces = detector(cimg);
-
   image_window win;
-  face_landmarks = pose_model(cimg, faces[0]);
+  dlib::rectangle rect(0, 0, IMG_SIZE, IMG_SIZE);
+  face_landmarks = pose_model(cimg, rect);
   auto landmarks = int_vectorize_landmarks(face_landmarks);
-  write_points("avg_face", landmarks);
+  write_points(outImg + ".txt", landmarks);
 
   Mat mask = genMask(landmarks);
   Mat cropped2 = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
   scaled.copyTo(cropped2, mask);
   imshow("cropped", cropped2);
-  imwrite("wagner_lindo.jpg", cropped2);
+  imwrite(outImg, cropped2);
   // Read points
   dlib::assign_image(simg, cimg);
   //   dlib::extract_image_chips(simg, faces[0], cut_img);
