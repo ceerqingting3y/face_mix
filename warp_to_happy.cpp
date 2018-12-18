@@ -119,8 +119,8 @@ int main() {
   // Grab and process frames until the\main window is closed by the user.
   // Grab a frame
   Mat src;
-  src = imread("wagner_neutral.jpg");
-  Mat shouting = imread("wagner_lindo.jpg");
+  src = imread("photos/wagner_neutral.jpg");
+  Mat shouting = imread("photos/wagner_lindo.jpg");
   // Detect faces
 
   // Read input images
@@ -133,7 +133,6 @@ int main() {
   warpFaces(src, output, points1, points2);
   Mat difference;
 
-  cout << shouting.size() << " " << output.size() << endl;
   absdiff(shouting, output, difference);
   imshow("difference", difference);
   imshow("neutral", src);

@@ -124,7 +124,7 @@ void morphFaces(Mat &src, Mat &base, Mat &output, Mat &allMask,
     multiply(imgRect, mask, imgRect);
     multiply(output(r2), Scalar(1.0, 1.0, 1.0) - mask, output(r2));
     output(r2) = output(r2) + imgRect;
-    allMask(r2) += allMask(r2) + mask;
+    allMask(r2) += mask;
   }
 }
 
@@ -163,7 +163,7 @@ int main() {
         auto landmarks = vectorize_landmarks(face_landmarks);
 
         // Read input images
-        string filename2("ted_cruz.jpg");
+        string filename2("photos/mona.jpg");
         Mat base = imread(filename2);
         // convert Mat to float data type
         src.convertTo(src, CV_32F);

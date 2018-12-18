@@ -98,8 +98,8 @@ void morphFaces(Mat &src, Mat &base, Mat &output, Mat &allMask,
 }
 
 int main(int argc, char **argv) {
-  string filename1("wagner.jpg");
-  string filename2("mona.jpg");
+  string filename1("photos/wagner.jpg");
+  string filename2("photos/mona.jpg");
 
   // alpha controls the degree of morph
   double alpha = 1;
@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
   seamlessClone(output, m2, mask, centerInt, output, NORMAL_CLONE);
   imshow("Morphed Face", output);
 
-  imwrite("wagnelisa.jpg", base);
+  imwrite("photos/wagnelisa.jpg", base);
   waitKey(0);
 
   return 0;

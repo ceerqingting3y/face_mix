@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
   double alpha = 1;
   // Read input images
   Mat src = imread(filename1);
-
+  cout << src.size() << endl;
   // initial setup for dlib
   cv_image<bgr_pixel> cimg(src);
   matrix<rgb_pixel> simg, cut_img;

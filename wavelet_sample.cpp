@@ -9,12 +9,11 @@ using namespace cv;
 using namespace std;
 
 int main() {
-  Mat wag = imread("monalisa.jpg");
+  Mat wag = imread("photos/monalisa.jpg");
   Mat wagGray;
   cvtColor(wag, wagGray, COLOR_RGB2GRAY);
   wagGray.convertTo(wagGray, CV_32FC1);
-  imshow("wag", wagGray);
-  Mat transform = Mat::zeros(wagGray.size() * 2, CV_32FC1);
+  Mat transform = Mat::zeros(wagGray.size(), CV_32FC1);
   int iter = 1;
   while (iter) {
     cvHaarWavelet(wagGray, transform, iter);
