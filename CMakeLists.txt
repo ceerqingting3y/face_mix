@@ -15,8 +15,11 @@ target_link_libraries(face_morph dlib::dlib ${OpenCV_LIBS})
 add_executable(face_morph_ex face_morph_ex.cpp src/utils.cpp)
 target_link_libraries(face_morph_ex dlib::dlib ${OpenCV_LIBS} )
 
-add_executable(static_transfer static_transfer.cpp src/delaunay.cpp src/utils.cpp src/dwt.cpp)
+add_executable(static_transfer static_transfer.cpp src/delaunay.cpp src/utils.cpp src/dwt.cpp src/hist.cpp src/transfer.cpp)
 target_link_libraries(static_transfer dlib::dlib ${OpenCV_LIBS} )
+
+add_executable(active_transfer active_transfer.cpp src/delaunay.cpp src/utils.cpp src/dwt.cpp src/hist.cpp src/transfer.cpp)
+target_link_libraries(active_transfer dlib::dlib ${OpenCV_LIBS} )
 
 add_executable(morph_video morph_video.cpp src/utils.cpp)
 target_link_libraries(morph_video dlib::dlib ${OpenCV_LIBS} )

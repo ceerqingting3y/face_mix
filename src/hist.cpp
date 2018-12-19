@@ -8,9 +8,14 @@ MatND Histogramme::getHistogram(const Mat &img){
     return histo;
 }
 
-void Histogramme::histogram_specify(const Mat &img1, const Mat &img2, Mat & dst){
-    MatND src_hist = getHistogram(img1);
-    MatND dst_hist = getHistogram(img2);
+void histogram_specify(const Mat &img1, const Mat &img2, Mat & dst){
+    Histogramme hist0;
+    cout<<"histo1"<<endl;
+    MatND dst_hist = hist0.getHistogram(img2);
+    
+    cout<<"histo2"<<endl;
+    MatND src_hist = hist0.getHistogram(img1);
+    
 
     src_hist = src_hist/(img1.rows*img1.cols);
     dst_hist = dst_hist/(img2.rows*img2.cols);

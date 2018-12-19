@@ -15,475 +15,42 @@
 #include <numeric>
 #include <algorithm>
 #include "src/dwt.hpp"
+#include "src/hist.hpp"
+#include "src/utils.hpp"
+#include "src/transfer.hpp"
 
 using namespace dlib;
 using namespace std;
 using namespace cv;
 
-// read predefined triangles 
-std::vector<std::vector<int>> read_triangles(string filename){
-	std::vector<std::vector<int>> triangles;
-	ifstream ifs(filename);
-	float x, y, z;
-	while (ifs >> x >> y >> z) {
-		std::vector<int> tri;
-		tri.push_back(x);
-		tri.push_back(y);
-		tri.push_back(z);
-		triangles.push_back(tri);
-	}
-
-	return triangles;
-}
-
-int search_point(std::vector<Point2f> &points, Point2f & point){
-	int re = -1;
-	for (size_t i =0 ; i< points.size();i++){
-		if ((int)point.x == (int)points[i].x && (int)point.y ==(int)points[i].y){
-			re = i;
-			break;
-		}
-	}
-	return re;
-}
-
-std::vector<std::vector<int>> get_triangles_from_target(cv::Mat &image, std::vector<cv::Point2f> &points, string filename){
-	// Rectangle to be used with Subdiv2D
-	Rect rect(0, 0, image.size().width, image.size().height);
-	// Create an instance of Subdiv2D
-	Subdiv2D subdiv(rect);
-	// Insert points into subdiv
-	for( std::vector<Point2f>::iterator it = points.begin(); it != points.end(); it++)
-	{
-		subdiv.insert(*it);
-	}
-	std::vector<Vec6f> triangleList;
-    subdiv.getTriangleList(triangleList);
-	std::vector<std::vector<int>> tri_partition;
-
-	ofstream myfile;
-  	myfile.open (filename+"triangle.txt");
-  	
-	for( size_t i = 0; i < triangleList.size(); i++ ){
-		Point2f p1(triangleList[i][0],triangleList[i][1]);
-		Point2f p2(triangleList[i][2],triangleList[i][3]);
-		Point2f p3(triangleList[i][4],triangleList[i][5]);
-		int a,b,c;
-		a = search_point(points,p1);
-		b = search_point(points,p2);
-		c = search_point(points,p3);
-		if (a>-1 && b>-1 && c>-1){
-			std::vector<int> v;
-			v.push_back(a);
-			v.push_back(b);
-			v.push_back(c);
-			tri_partition.push_back(v);
-			myfile << a<<" "<<b<<" "<<c<<endl;
-		}
-	}
-	myfile.close();
-	return tri_partition;
-}
-
-void show_landmarks(cv::Mat image, std::vector<cv::Point2f> &points){
-	for (cv::Point2f p : points){
-		circle(image, cvPoint(p.x, p.y), 3, cv::Scalar(0, 0, 255), -1);
-	}
-	//imshow("landmark",image);
-	//waitKey(0);
-}
-
-void show_delauney(cv::Mat image, std::vector<cv::Point2f> &points, std::vector<std::vector<int>> &triangles){
-	cv::Scalar delaunay_color(255, 255, 255);
-	cv::Size size = image.size();
-	cv::Rect rect(0, 0, size.width, size.height);
-	for (std::vector<std::vector<int>>::iterator it = triangles.begin(); it!=triangles.end();++it){
-		int a,b,c;
-		a = (*it)[0];
-		b = (*it)[1];
-		c = (*it)[2];
-		Point2f p1 = points[a];
-		Point2f p2 = points[b];
-		Point2f p3 = points[c];
-		if (rect.contains(p1) && rect.contains(p2) && rect.contains(p3)) {
-		cv::line(image, p1, p2, delaunay_color, 1, CV_AA, 0);
-		cv::line(image, p2, p3, delaunay_color, 1, CV_AA, 0);
-		cv::line(image, p3, p1, delaunay_color, 1, CV_AA, 0);
-		}
-	}
-	//imshow("delauney",image);
-	//waitKey(0);
-}
-
-
-cv::Mat myGetAffineTransform(const std::vector<Point2f> & src, const std::vector<Point2f> &dst, int m)
-{
-    cv::Mat_<float> X = cv::Mat(m, 3, CV_32FC1, cv::Scalar(0));
-    cv::Mat_<float> Y = cv::Mat(m, 2, CV_32FC1, cv::Scalar(0));
-
-    for (int i = 0; i < m; i++)
-    {
-        float x0 = src[i].x, x1 = src[i].y;
-        float y0 = dst[i].x, y1 = dst[i].y;
-
-        X(i, 0) = x0;
-        X(i, 1) = x1;
-        X(i, 2) = 1;
-
-        Y(i, 0) = y0;
-        Y(i, 1) = y1;
-    }
-
-    cv::Mat_<float> F = (X.t()*X).inv()*(X.t()*Y);
-
-    // cout << F << endl;
-
-    return F.t();
-}
-
-void applyAffineTransform(Mat &warpImage, Mat &src, std::vector<Point2f> &srcTri, std::vector<Point2f> &dstTri)
-{
-    
-    // Given a pair of triangles, find the affine transform.
-	//scaling 
-	//std::vector<Point2f> scale_src,scale_dst;
-	//for (int i=0;i<3;i++){
-	//	scale_src.push_back(Point2f(100*srcTri[i].x,100*srcTri[i].y));
-	//	scale_dst.push_back(Point2f(100*dstTri[i].x,100*dstTri[i].y));
-	//}
-  	//Mat warp = getAffineTransform(scale_src,scale_dst);
-    Mat warpMat = getAffineTransform( srcTri, dstTri );
-	std::vector<Point2f> test_dst(3);
-	cout<<"say something!"<<endl;
-	cout<<src.size()<<" "<<test_dst.size()<<endl;
-	cv::transform(srcTri,test_dst,warpMat);
-	cout<<"not me!"<<endl;
-	Mat mywarp = myGetAffineTransform(srcTri,dstTri,3);
-
-	cout<<mywarp.at<float>(0,0)<<" "<<mywarp.at<float>(0,1)<<" "<<mywarp.at<float>(0,2)<<endl;
-	cout<<mywarp.at<float>(1,0)<<" "<<mywarp.at<float>(1,1)<<" "<<mywarp.at<float>(1,2)<<endl;
-	// Apply the Affine Transform just found to the src image
-    warpAffine( src, warpImage, warpMat, warpImage.size(), INTER_LINEAR, BORDER_REFLECT_101);
-	Mat row = cv::Mat::ones(1, 3, CV_64F);
-	row.at<float>(0,0) = 0;
-	row.at<float>(0,1) = 0;
-	//warpMat.push_back(row);
-	//Mat warp = warpMat.inv();
-	Mat warp;
-	invertAffineTransform(warpMat,warp);
-	for (int i=0;i<3;i++){
-		Point2f p = srcTri[i];
-		float x = mywarp.at<float>(0,0)* p.x + mywarp.at<float>(0,1) *p.y + mywarp.at<float>(0,2);
-		float y = mywarp.at<float>(1,0)* p.x + mywarp.at<float>(1,1) *p.y + mywarp.at<float>(1,2);
-		cout<<"transformed dst point"<<int(x)<<" "<<int(y)<<endl;
-		cout<<"correct dst point"<<int(srcTri[i].x)<<int(srcTri[i].y)<<endl;
-		cout<<"test_dst"<<int(test_dst[i].x)<<" "<<int(test_dst[i].y)<<endl;
-
-	}
-    cout<<warp.at<float>(0,0)<<" "<<warp.at<float>(0,1)<<" "<<warp.at<float>(0,2)<<endl;
-	cout<<warp.at<float>(1,0)<<" "<<warp.at<float>(1,1)<<" "<<warp.at<float>(1,2)<<endl;
-	//cout<<warp.at<float>(2,0)<<" "<<warp.at<float>(2,1)<<" "<<warp.at<float>(2,2)<<endl;
-	
-
-    
-}
-
-void test(){
-	Point2f srctri[3];
-	Point2f dsttri[3];
-	Mat warp( 2, 3, CV_32FC1);
-   	srctri[0] = Point2f(24.0,38.0);
-	srctri[1] = Point2f(0.0,15.0);
-	srctri[2] = Point2f(11.0,0.0);
-	dsttri[0] = Point2f(23.0,35.0);
-	dsttri[1] = Point2f(0.0,14.0);
-	dsttri[2] = Point2f(11.0,0.0);
-	warp = getAffineTransform(srctri,dsttri);
-	cout<<warp.at<float>(0,0)<<" "<<warp.at<float>(0,1)<<" "<<warp.at<float>(0,2)<<endl;
-	cout<<warp.at<float>(1,0)<<" "<<warp.at<float>(1,1)<<" "<<warp.at<float>(1,2)<<endl;
-}
-
-void transfer_to_target(std::vector<Point2f> & t1_tri,std::vector<Point2f> & s1_tri, std::vector<Point2f> & s2_tri,std::vector<Point> & t_int, Mat & face_t1,Mat &face_t2, Mat & face_s1,Mat & face_s2){
-	// Get mask by filling triangle
-	cout<<"begin rect"<<endl;
-	Rect r1 = boundingRect(t1_tri);
-	Rect r = boundingRect(s1_tri);
-	Rect rr = boundingRect(s2_tri);
-
-	std::vector<Point2f> new_r1,new_r,new_rr;
-	std::vector<Point> new_riint;
-	for (int i = 0; i < 3; i++) {
-			new_r1.push_back(Point2f(t1_tri[i].x - r1.x, t1_tri[i].y - r1.y));
-			new_r.push_back(Point2f(s1_tri[i].x - r.x, s1_tri[i].y - r.y));
-			new_rr.push_back(Point2f(s2_tri[i].x - rr.x, s2_tri[i].y - rr.y));
-			//new_riint.push_back(Point(t1_tri[i].x - r1.x, t1_tri[i].y - r1.y));
-			new_riint.push_back(Point(t1_tri[i].x - r1.x, t1_tri[i].y - r1.y));
-			//cout<<"t1r rect"<<rt1.x<<" "<<rt1.y<<endl;
-			//cout<<t1r[i].x<<" "<<t1r[i].y<<endl;
-	}
-	cout<<"begin mask"<<endl;
-    Mat mask = Mat::zeros(r1.height, r1.width, CV_32FC3);
-    fillConvexPoly(mask, new_riint, Scalar(1.0, 1.0, 1.0), 16, 0);
-    
-	cout<<"begin copy"<<endl;
-    // Apply warpImage to small rectangular patches
-    Mat img1Rect;
-    //face_s1(r).copyTo(img1Rect);
-	face_s2(rr).copyTo(img1Rect);
-    
-    Mat warpImage1 = Mat::zeros(r1.height, r1.width, img1Rect.type());
-    //Mat warpImage2 = Mat::zeros(r.height, r.width, img2Rect.type());
-    cout<<"begin affine"<<endl;
-    applyAffineTransform(warpImage1, img1Rect, new_rr, new_r1);
-    //applyAffineTransform(warpImage2, img2Rect, t2Rect, tRect);
-    cout<<"end affine"<<endl;
-    // Alpha blend rectangular patches
-    //Mat imgRect = (1.0 - alpha) * warpImage1 + alpha * warpImage2;
-    
-    // Copy triangular region of the rectangular patch to the output image
-	cout<<"multiply1"<<endl;
-    multiply(warpImage1,mask, warpImage1);
-	cout<<"multiply2"<<endl;
-    multiply(face_t2(r1), Scalar(1.0,1.0,1.0) - mask, face_t2(r1));
-	cout<<"add"<<endl;
-    face_t2(r1) = face_t2(r1) + warpImage1;
-	//Mat temp;
-	//face_t2.convertTo(temp,CV_8UC3);
-	//imshow("morph",temp);
-	//waitKey(0);
-    
-}
-
-void transfer_to_source(std::vector<Point2f> & src_tri,std::vector<Point2f> & dst_tri,  Mat & src_face, Mat &dst_face){
-	// Get mask by filling triangle
-	// t1 --> s2 
-	cout<<"begin rect"<<endl;
-	Rect r1 = boundingRect(src_tri);
-	Rect rr = boundingRect(dst_tri);
-
-	std::vector<Point2f> new_r1,new_rr;
-	std::vector<Point> new_riint;
-	for (int i = 0; i < 3; i++) {
-			new_r1.push_back(Point2f(src_tri[i].x - r1.x, src_tri[i].y - r1.y));
-			new_rr.push_back(Point2f(dst_tri[i].x - rr.x, dst_tri[i].y - rr.y));
-			new_riint.push_back(Point(dst_tri[i].x - rr.x, dst_tri[i].y - rr.y));
-	}
-	cout<<"begin mask"<<endl;
-    Mat mask = Mat::zeros(rr.height, rr.width, CV_32FC3);
-    fillConvexPoly(mask, new_riint, Scalar(1.0, 1.0, 1.0), 16, 0);
-    
-	cout<<"begin copy"<<endl;
-    // Apply warpImage to small rectangular patches
-    Mat img1Rect;
-    //face_s1(r).copyTo(img1Rect);
-	src_face(r1).copyTo(img1Rect);
-    
-    Mat warpImage1 = Mat::zeros(rr.height, rr.width, img1Rect.type());
-    //Mat warpImage2 = Mat::zeros(r.height, r.width, img2Rect.type());
-    cout<<"begin affine"<<endl;
-    applyAffineTransform(warpImage1, img1Rect, new_r1, new_rr);
-    //applyAffineTransform(warpImage2, img2Rect, t2Rect, tRect);
-    cout<<"end affine"<<endl;
-    // Alpha blend rectangular patches
-    //Mat imgRect = (1.0 - alpha) * warpImage1 + alpha * warpImage2;
-    
-    // Copy triangular region of the rectangular patch to the output image
-	cout<<"multiply1"<<endl;
-    multiply(warpImage1,mask, warpImage1);
-	cout<<"multiply2"<<endl;
-    multiply(dst_face(rr), Scalar(1.0,1.0,1.0) - mask, dst_face(rr));
-	cout<<"add"<<endl;
-    dst_face(rr) = dst_face(rr) + warpImage1;
-	//Mat temp;
-	//face_t2.convertTo(temp,CV_8UC3);
-	//imshow("morph",temp);
-	//waitKey(0);
-    
-}
-void target_to_target(std::vector<Point2f> & t1_tri,std::vector<Point2f> & s1_tri, std::vector<Point2f> & s2_tri, std::vector<Point> & t_int, Mat & face_t1,Mat &face_t2, Mat & face_s1, Mat & face_s2){
-	// input face_t2 is zeros 
-	// Get mask by filling triangle
-	cout<<"begin rect"<<endl;
-	// boudning rect in the position of the initial image 
-	Rect r1 = boundingRect(t1_tri);
-	
-	//Rect r2(r1.x,r1.y,min(face_t2.cols - r1.x, r1.width*2),min(face_t2.rows - r1.y,r1.height*2));
-	Rect r2(r1.x,r1.y,r1.width,r1.height);
-	cout<<r2.height + r2.y<<" "<<r2.width+r2.x<<endl;
-	cout<<r1.height + r1.y<<" "<<r1.width+r1.x<<endl;
-	Rect r = boundingRect(s1_tri);
-	Rect rr = boundingRect(s2_tri);
-
-	std::vector<Point2f> new_r1,new_r,new_rr; //coordinates shifted 
-	std::vector<Point> new_riint;
-	for (int i = 0; i < 3; i++) {
-			new_r1.push_back(Point2f(t1_tri[i].x - r1.x, t1_tri[i].y - r1.y));
-			new_r.push_back(Point2f(s1_tri[i].x - r.x, s1_tri[i].y - r.y));
-			new_rr.push_back(Point2f(s2_tri[i].x - rr.x, s2_tri[i].y - rr.y));
-			//new_riint.push_back(Point(t1_tri[i].x - r1.x, t1_tri[i].y - r1.y));
-			new_riint.push_back(Point(t1_tri[i].x - r1.x, t1_tri[i].y - r1.y));
-			//cout<<"t1r rect"<<rt1.x<<" "<<rt1.y<<endl;
-			//cout<<t1r[i].x<<" "<<t1r[i].y<<endl;
-	}
-	// mask for t2 
-	//cout<<"begin mask"<<endl;
-    Mat mask = Mat::zeros(r1.height, r1.width, CV_32FC3);
-    fillConvexPoly(mask, new_riint, Scalar(1.0, 1.0, 1.0), 16, 0);
-    
-	cout<<"begin copy"<<endl;
-	// source image rect 
-    Mat img1Rect;
-    //face_s1(r).copyTo(img1Rect);
-	face_t1(r1).copyTo(img1Rect);
-	multiply(img1Rect,mask,img1Rect);
-
-    Mat warpImage1 = Mat::zeros(r2.height, r2.width, img1Rect.type());
-    //Mat warpImage2 = Mat::zeros(r.height, r.width, img2Rect.type());
-    cout<<"begin affine"<<endl;
-    applyAffineTransform(warpImage1, img1Rect, new_r, new_rr);
-    //applyAffineTransform(warpImage2, img2Rect, t2Rect, tRect);
-    cout<<"end affine"<<endl;
-    // Alpha blend rectangular patches
-    //Mat imgRect = (1.0 - alpha) * warpImage1 + alpha * warpImage2;
-    
-    // Copy triangular region of the rectangular patch to the output image
-
-	// get the image part 
-	//cout<<"multiply1"<<endl;
-    //multiply(warpImage1,mask, warpImage1);
-	//cout<<"multiply2"<<endl;
-    //multiply(face_t2(r1), Scalar(1.0,1.0,1.0) - mask, face_t2(r1));
-	cout<<"add"<<endl;
-	cout<<r2.height + r2.y<<" "<<r2.width+r2.x<<endl;
-	cout<<r1.height + r1.y<<" "<<r1.width+r1.x<<endl;
-	cout<<face_t2.rows<< " "<<face_t2.cols<<endl;
-    face_t2(r2) = face_t2(r2) + warpImage1;
-	//Mat temp;
-	//face_t2.convertTo(temp,CV_8UC3);
-	//imshow("morph",temp);
-	//waitKey(0);
-    
-}
-
-void static_transfer_target(std::vector<Point2f> &t1_tri, std::vector<Point2f> &t2_tri, Mat & face_t1, Mat & face_t2){
-	// Get mask by filling triangle
-	cout<<"begin rect"<<endl;
-	cout<<t1_tri[0].x<<" "<<t1_tri[0].y<<endl;
-	cout<<t1_tri[1].x<<" "<<t1_tri[1].y<<endl;
-	cout<<t1_tri[2].x<<" "<<t1_tri[2].y<<endl;
-	cout<<t2_tri[0].x<<" "<<t2_tri[0].y<<endl;
-	cout<<t2_tri[1].x<<" "<<t2_tri[1].y<<endl;
-	cout<<t2_tri[2].x<<" "<<t2_tri[2].y<<endl;
-	Rect r1 = boundingRect(t1_tri);
-	Rect r2= boundingRect(t2_tri);
-	cout<<"r1 size "<<r1.x+r1.width<<" "<<r1.y+r1.height<<endl;
-	cout<<"r2 size "<<r2.x+r2.width<<" "<<r2.y+r2.height<<endl;
-
-	std::vector<Point2f> new_r1,new_r2;
-	std::vector<Point> t2_int;
-	for (int i = 0; i < 3; i++) {
-			new_r1.push_back(Point2f(t1_tri[i].x - r1.x, t1_tri[i].y - r1.y));
-			new_r2.push_back(Point2f(t2_tri[i].x - r2.x, t2_tri[i].y - r2.y));
-			t2_int.push_back(Point(t2_tri[i].x - r2.x, t2_tri[i].y - r2.y));
-			//cout<<"t1r rect"<<rt1.x<<" "<<rt1.y<<endl;
-			//cout<<t1r[i].x<<" "<<t1r[i].y<<endl;
-	}
-	cout<<"begin mask"<<endl;
-	// mask r1 src image patch 
-    Mat mask = Mat::zeros(r2.height, r2.width, CV_32FC3);
-    fillConvexPoly(mask, t2_int, Scalar(1.0, 1.0, 1.0), 16, 0);
-    
-	cout<<"begin copy"<<endl;
-    // Apply warpImage to small rectangular patches
-    Mat img1Rect;
-	face_t1(r1).copyTo(img1Rect);
-    
-    Mat warpImage1 = Mat::zeros(r2.height, r2.width, img1Rect.type());
-    //Mat warpImage2 = Mat::zeros(r.height, r.width, img2Rect.type());
-    cout<<"begin affine"<<endl;
-    applyAffineTransform(warpImage1, img1Rect, new_r1, new_r2);
-    //applyAffineTransform(warpImage2, img2Rect, t2Rect, tRect);
-    cout<<"end affine"<<endl;
-    // Alpha blend rectangular patches
-    //Mat imgRect = (1.0 - alpha) * warpImage1 + alpha * warpImage2;
-    
-    // Copy triangular region of the rectangular patch to the output image
-	cout<<"multiply1"<<endl;
-    multiply(warpImage1,mask, warpImage1);
-	
-	cout<<"mask "<<mask.cols<<" "<<mask.rows<<endl;
-	cout<<"r2 "<<r2.height<<" "<<r2.width<<endl;
-	cout<<"r2 xy "<<r2.x<<" "<<r2.y<<endl;
-
-	cout<<"multiply2"<<endl;
-	try{
-    	multiply(face_t2(r2), Scalar(1.0,1.0,1.0) - mask, face_t2(r2));
-		cout<<"add"<<endl;
-		face_t2(r2) = face_t2(r2) + warpImage1;
-	}
-	catch(...)
-	{
-		cout<<"WARNING!!!!!!!!!"<<endl;
-	}
-	
-	//Mat temp;
-	//face_t2.convertTo(temp,CV_8UC3);
-	//imshow("morph",temp);
-	//waitKey(0);
-}
-
-void calculate_new_points(std::vector<std::vector<Point2f>> & t2_points,std::vector<Point2f> &t2_new_points){
-	for (int i=0;i<68;i++){
-		if (t2_points[i].size()==0){
-			cout<<"zero!!!!!!!"<<endl;
-			t2_new_points.push_back(Point2f(0,0));
-			continue;
-		}
-		Point2f p = std::accumulate(t2_points[i].begin(),t2_points[i].end(),Point2f(0,0));
-		p.x = round(std::max(p.x/t2_points[i].size(),float(0.0)));
-		p.y = round(std::max(p.y/t2_points[i].size(),float(0.0)));
-		t2_new_points.push_back(p);
-		cout<<t2_new_points[i].x<<" "<<t2_new_points[i].y<<endl;
-	}	
-}
 int main(int argc, char** argv){
-	//test();
 	// Load face detection and pose estimation models.
     frontal_face_detector detector = get_frontal_face_detector();
     shape_predictor pose_model;
     deserialize("shape_predictor_68_face_landmarks.dat") >> pose_model;
 
 	// read target neutral triangle information 
-	//std::vector<std::vector<int>> triangles = read_triangles("delaunay.txt");
-
-	//------------------------------------------------------
+	std::vector<std::vector<int>> triangles = read_triangles("jpg/baseline.txt");
+	//------------------------------------------------------------------------------------------------------
 	//read images 
-	//------------------------------------------------------
+	//------------------------------------------------------------------------------------------------------
 	// read target image t (neutral)
 	string filename_t = argv[3];
 	cv::Mat target0 = cv::imread(filename_t);
 	//imshow("target",target0);
 	//waitKey(0);
 	cv_image<bgr_pixel> img_t(target0);
-	//array2d<bgr_pixel> img_t;
-	//load_image(img_t, filename_t);
-	//cv::Mat target = dlib::toMat(img_t);
 	// convert Mat to float data type
 	cv::Mat target;
 	target0.convertTo(target, CV_32F);
-	//Mat output = target.clone();
-	//Mat allmask = Mat::zeros(target.size(), CV_32FC3);
-	
-	cout<<"read target image"<<endl;
 
 	// Detect target
     std::vector<dlib::rectangle> tfaces = detector(img_t);
 	full_object_detection tface_landmarks;
-	//std::vector<Point2f> tpoints;
 	tface_landmarks = pose_model(img_t, tfaces[0]);
-		// std::vector<cv::Point2f>
 	auto tpoints = vectorize_landmarks(tface_landmarks);
 
+	
 	Rect rect_face_t = boundingRect(tpoints);
 	Mat face_t1;
 	target0(rect_face_t).copyTo(face_t1);
@@ -491,17 +58,10 @@ int main(int argc, char** argv){
 	//waitKey(0);
 
 	show_landmarks(target0, tpoints);
-	std::vector<std::vector<int>> triangles = read_triangles("jpg/baseline.txt");
+	//std::vector<std::vector<int>> triangles = read_triangles("jpg/baseline.txt");
 	//get_triangles_from_target(target,tpoints,filename_t.substr(0,filename_t.find(".")));
 	show_delauney(target0,tpoints,triangles);
-	/*
-	image_window win_faces;
-	std::vector<full_object_detection> tttt;
-	tttt.push_back(tface_landmarks);
-	dlib::array<array2d<rgb_pixel>> face_chips;
-	extract_image_chips(img_t, get_face_chip_details(tttt), face_chips);
-	win_faces.set_image(tile_images(face_chips));
-*/
+	
 	// read source image s1 (neutral)
 	// read source image s2 (non-neutral)
 	string filename_s1 = argv[1];
@@ -513,12 +73,9 @@ int main(int argc, char** argv){
 	cv::Mat source10 = dlib::toMat(img_s1);
 	cv::Mat source20 = dlib::toMat(img_s2);
 	Mat source1,source2;
-
 	source10.convertTo(source1,CV_32F);
 	source20.convertTo(source2,CV_32F);
-
-	cout<<"read source images"<<endl;
-
+	
 
 	std::vector<dlib::rectangle> s1faces = detector(img_s1);
 	full_object_detection s1face_landmarks;
@@ -617,7 +174,7 @@ int main(int argc, char** argv){
 			//cout<<t1r[i].x<<" "<<t1r[i].y<<endl;
 		}
 
-		transfer_to_target(triangle3,triangle1,triangle2,t_int,face_t1,face_t3,face_s1,face_s2);
+		transfer_to_source(triangle2,triangle3,face_s2,face_t3);
 		transfer_to_source(triangle3,triangle2,face_t1,face_t4);
 		transfer_to_source(triangle1,triangle2,face_s1,face_t5);
 		//target_to_target(triangle3,triangle1, triangle2, t_int,face_t1,face_t5,face_s1,face_s2);
@@ -681,7 +238,7 @@ int main(int argc, char** argv){
 		cout<<"begin copy rect"<<endl;
 		cout<<"begin affine transformation"<<endl;
 
-		static_transfer_target(tr1,tr2,face_t1,face_t2);
+		transfer_to_source(tr1,tr2,face_t1,face_t2);
 
 	}
 	cout<<"calculate new points! success!"<<endl;
@@ -774,7 +331,19 @@ int main(int argc, char** argv){
 	imshow("DWT4",dst_show4);
 	waitKey(0);
 	
-
+	// change histogram to make the face more like the original one
+	Mat dst_final;
+	Mat img1;
+	cout<<"convert channel"<<endl;
+	//t4.convertTo(t4,CV_8U);
+	cout<<"convert color"<<endl;
+	//cvtColor(t4,img1,CV_RGB2GRAY);
+	t4.convertTo(img1,CV_8UC1);
+	cout<<img1.dims<<endl;
+	histogram_specify(dst_show4,img1,dst_final);
+	cvtColor(dst_final,dst_final,CV_GRAY2RGB);
+	imshow("Final result",dst_final);
+	waitKey(0);
 	/*
 	Mat t3;
 	face_t3.convertTo(t3, CV_8UC3);
