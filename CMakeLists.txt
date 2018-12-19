@@ -17,10 +17,15 @@ add_executable(face_morph_ex face_morph_ex.cpp src/utils.cpp)
 target_link_libraries(face_morph_ex dlib::dlib ${OpenCV_LIBS} )
 set_target_properties(face_morph_ex PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-add_executable(static_transfer static_transfer.cpp src/delaunay.cpp src/utils.cpp)
+add_executable(static_transfer static_transfer.cpp src/delaunay.cpp src/utils.cpp src/dwt.cpp src/hist.cpp src/transfer.cpp)
 target_link_libraries(static_transfer dlib::dlib ${OpenCV_LIBS} )
 set_target_properties(static_transfer PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+<<<<<<< HEAD
+add_executable(active_transfer active_transfer.cpp src/delaunay.cpp src/utils.cpp src/dwt.cpp src/hist.cpp src/transfer.cpp)
+target_link_libraries(active_transfer dlib::dlib ${OpenCV_LIBS} )
+=======
+>>>>>>> 9f96e0939d6c04689b85955cad52e54a8bf8eabd
 
 add_executable(morph_video morph_video.cpp src/utils.cpp)
 target_link_libraries(morph_video dlib::dlib ${OpenCV_LIBS} )
@@ -41,6 +46,8 @@ set_target_properties(warp_to_happy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE
 
 add_executable(wavelet_sample wavelet_sample.cpp src/wavelet.cpp)
 target_link_libraries(wavelet_sample dlib::dlib ${OpenCV_LIBS})
+<<<<<<< HEAD
+=======
 set_target_properties(wavelet_sample PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 
@@ -48,3 +55,4 @@ add_executable(write_delaunay write_delaunay.cpp src/delaunay.cpp src/utils.cpp)
 target_link_libraries(write_delaunay dlib::dlib ${OpenCV_LIBS})
 set_target_properties(write_delaunay PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+>>>>>>> 9f96e0939d6c04689b85955cad52e54a8bf8eabd
