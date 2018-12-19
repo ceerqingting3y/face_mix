@@ -4,14 +4,14 @@ project(examples)
 
 SET(OpenCV_DIR /Users/yingyu/opencv-3.4.3/release)
 
-add_subdirectory(../../dlib dlib_build)
+add_subdirectory(../dlib dlib_build)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 
-add_executable(face_morph face_morph.cpp src/delaunay.cpp src/utils.cpp)
-target_link_libraries(face_morph dlib::dlib ${OpenCV_LIBS})
-set_target_properties(face_morph PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+add_executable(show_delaunay show_delaunay.cpp src/delaunay.cpp src/utils.cpp)
+target_link_libraries(show_delaunay dlib::dlib ${OpenCV_LIBS})
+set_target_properties(show_delaunay PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 add_executable(face_morph_ex face_morph_ex.cpp src/utils.cpp)
 target_link_libraries(face_morph_ex dlib::dlib ${OpenCV_LIBS} )
