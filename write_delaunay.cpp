@@ -31,7 +31,7 @@ static cv::Rect dlib_rect_to_cv(dlib::rectangle r) {
 Mat genMask(std::vector<Point> &points) {
   // Find bounding rectangle for each triangle
   // Read triangle indices
-  ifstream ifs("jpg/baseline.txt");
+  ifstream ifs("delaunay.txt");
   int x, y, z;
   Mat allMask = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
   while (ifs >> x >> y >> z) {
@@ -59,17 +59,17 @@ Mat genMask(std::vector<Point> &points) {
 }
 
 int main(int argc, char **argv) {
-  if (argc == 2) {
-    cerr << "format <srcImgnName> <outputImg>" << endl;
+  if (argc == 1) {
+    cerr << "Please provide the photo name" << endl;
     return 1;
   }
   string filename1(argv[1]);
-  string outImg(argv[2]);
+
   // alpha controls the degree of morph
   double alpha = 1;
   // Read input images
   Mat src = imread(filename1);
-
+  cout << src.size() << endl;
   // initial setup for dlib
   cv_image<bgr_pixel> cimg(src);
   matrix<rgb_pixel> simg, cut_img;
@@ -90,27 +90,22 @@ int main(int argc, char **argv) {
 
   // update dlib variables
   cimg = cv_image<bgr_pixel>(scaled);
+  faces = detector(cimg);
+
   image_window win;
-  dlib::rectangle rect(0, 0, IMG_SIZE, IMG_SIZE);
-  face_landmarks = pose_model(cimg, rect);
-  auto landmarks = int_vectorize_landmarks(face_landmarks);
-  write_points(outImg + ".txt", landmarks);
+  Rect rect(0, 0, 159, 159);
+  face_landmarks = pose_model(cimg, faces[0]);
+  auto landmarks = vectorize_landmarks(face_landmarks);
+  auto delaunay = get_delaunay(landmarks, rect);
+  auto vertices_triangle = triangle_to_landmarks(landmarks, delaunay);
 
-  Mat mask = genMask(landmarks);
-  Mat cropped2 = Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
-  scaled.copyTo(cropped2, mask);
-  imshow("cropped", cropped2);
-  imwrite(outImg, cropped2);
-  // Read points
-  dlib::assign_image(simg, cimg);
-  //   dlib::extract_image_chips(simg, faces[0], cut_img);
-
-  win.clear_overlay();
-  win.set_image(simg);
-  win.add_overlay(faces, rgb_pixel(255, 0, 0));
-  win.add_overlay(render_face_detections(face_landmarks));
-
-  imshow("wagner", src);
+  ofstream fout("delaunay_1.txt");
+  for (int i = 0; i < vertices_triangle.size(); i++) {
+    for (int j = 0; j < 3; j++) {
+      fout << vertices_triangle[i][j] << " ";
+    }
+    cout << endl;
+  }
   waitKey(0);
 
   return 0;
