@@ -72,7 +72,7 @@ void morphFaces(Mat &src, Mat &base, Mat &output, Mat &allMask,
   // Find bounding rectangle for each triangle
 
   // Choose equivalent triangles in each image
-  ifstream ifs("delaunay.txt");
+  ifstream ifs("jpg/baseline.txt");
   int x, y, z;
   while (ifs >> x >> y >> z) {
     // Triangles
@@ -128,6 +128,18 @@ void morphFaces(Mat &src, Mat &base, Mat &output, Mat &allMask,
   }
 }
 
+std::vector<Point2f> findLandmarks(Mat &src, frontal_face_detector &detector,
+                                   shape_predictor &pose_model) {
+  cout << "here" << endl;
+  cv_image<bgr_pixel> cimg(src);
+  cout << "here" << endl;
+  std::vector<dlib::rectangle> faces = detector(cimg);
+  cout << "here" << endl;
+  auto face_landmarks = pose_model(cimg, faces[0]);
+  cout << "here" << endl;
+  return vectorize_landmarks(face_landmarks);
+}
+
 int main() {
   try {
     VideoCapture cap(0);
@@ -163,7 +175,7 @@ int main() {
         auto landmarks = vectorize_landmarks(face_landmarks);
 
         // Read input images
-        string filename2("photos/mona.jpg");
+        string filename2("photos/ted_cruz.jpg");
         Mat base = imread(filename2);
         // convert Mat to float data type
         src.convertTo(src, CV_32F);
@@ -177,6 +189,8 @@ int main() {
         Mat imgMorph = Mat::zeros(src.size(), CV_32FC3);
 
         // Read points
+        cout << src.size() << endl;
+        findLandmarks(src, detector, pose_model);
         std::vector<Point2f> points1 = landmarks;
         std::vector<Point2f> points2 = readPoints(filename2 + ".txt");
         morphFaces(src, base, output, mask, points1, points2, alpha);
