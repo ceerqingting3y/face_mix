@@ -2,6 +2,7 @@
 using namespace std;
 using namespace cv;
 using namespace dlib;
+
 // read predefined triangles 
 std::vector<std::vector<int>> read_triangles(string filename){
 	std::vector<std::vector<int>> triangles;
@@ -74,8 +75,9 @@ void show_landmarks(cv::Mat image, std::vector<cv::Point2f> &points){
 	for (cv::Point2f p : points){
 		circle(image, cvPoint(p.x, p.y), 3, cv::Scalar(0, 0, 255), -1);
 	}
-	//imshow("landmark",image);
-	//waitKey(0);
+	imshow("landmark",image);
+	waitKey(0);
+	
 }
 
 // give an image, its landmark points, its triangles, show the triangles on the image 
@@ -96,9 +98,11 @@ void show_delauney(cv::Mat image, std::vector<cv::Point2f> &points, std::vector<
 		cv::line(image, p2, p3, delaunay_color, 1, CV_AA, 0);
 		cv::line(image, p3, p1, delaunay_color, 1, CV_AA, 0);
 		}
+		
 	}
-	//imshow("delauney",image);
-	//waitKey(0);
+	imshow("delauney",image);
+	waitKey(0);
+	
 }
 
 // another version of getaffinetransform (use matrix / linear regression)
@@ -163,37 +167,37 @@ void applyAffineTransform(Mat &warpImage, Mat &src, std::vector<Point2f> &srcTri
 
 // map src_face to dst_face according to the points affinetransform 
 void transfer_to_source(std::vector<Point2f> & src_tri,std::vector<Point2f> & dst_tri,  Mat & src_face, Mat &dst_face){
-	cout<<"begin rect"<<endl;
+	//cout<<"begin rect"<<endl;
 	Rect r1 = boundingRect(src_tri);
 	Rect rr = boundingRect(dst_tri);
 
 	std::vector<Point2f> new_r1,new_rr;
 	std::vector<Point> new_riint;
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < src_tri.size(); i++) {
 			new_r1.push_back(Point2f(src_tri[i].x - r1.x, src_tri[i].y - r1.y));
 			new_rr.push_back(Point2f(dst_tri[i].x - rr.x, dst_tri[i].y - rr.y));
 			new_riint.push_back(Point(dst_tri[i].x - rr.x, dst_tri[i].y - rr.y));
 	}
-	cout<<"begin mask"<<endl;
+	//cout<<"begin mask"<<endl;
     Mat mask = Mat::zeros(rr.height, rr.width, CV_32FC3);
-    fillConvexPoly(mask, new_riint, Scalar(1.0, 1.0, 1.0), 16, 0);
-    
-	cout<<"begin copy"<<endl;
+	
+	//cout<<"begin copy"<<endl;
     Mat img1Rect;
 	src_face(r1).copyTo(img1Rect);
     
     Mat warpImage1 = Mat::zeros(rr.height, rr.width, img1Rect.type());
-    cout<<"begin affine"<<endl;
+    //cout<<"begin affine"<<endl;
     applyAffineTransform(warpImage1, img1Rect, new_r1, new_rr);
-    cout<<"end affine"<<endl;
-	cout<<"multiply1"<<endl;
+    //cout<<"end affine"<<endl;
+	//cout<<"multiply1"<<endl;
+	fillConvexPoly(mask, new_riint, Scalar(1.0, 1.0, 1.0), 16, 0);
     multiply(warpImage1,mask, warpImage1);
-	cout<<"multiply2"<<endl;
+	//cout<<"multiply2"<<endl;
     try{
-        multiply(dst_face(rr), Scalar(1.0,1.0,1.0) - mask, dst_face(rr));
-        cout<<"add"<<endl;
-        dst_face(rr) = dst_face(rr) + warpImage1;
-    }catch(...)
+		multiply(dst_face(rr), Scalar(1.0,1.0,1.0) - mask, dst_face(rr));
+		//cout<<"add"<<endl;
+		dst_face(rr) = dst_face(rr) + warpImage1;
+   	}catch(...)
 	{
 		cout<<"WARNING!!!!!!!!! in transfer to source"<<endl;
 	}
@@ -203,12 +207,12 @@ void transfer_to_source(std::vector<Point2f> & src_tri,std::vector<Point2f> & ds
 // carry out the target to target transform 
 // using the mapping relation between source1 and source2 
 void target_to_target(std::vector<Point2f> & t1_tri,std::vector<Point2f> & s1_tri, std::vector<Point2f> & s2_tri, std::vector<Point> & t_int, Mat & face_t1,Mat &face_t2, Mat & face_s1, Mat & face_s2){
-	cout<<"begin rect"<<endl;
+	//cout<<"begin rect"<<endl;
 	Rect r1 = boundingRect(t1_tri);
     // the rect in face_t2 (same size as in face_t1)
 	Rect r2(r1.x,r1.y,r1.width,r1.height);
-	cout<<r2.height + r2.y<<" "<<r2.width+r2.x<<endl;
-	cout<<r1.height + r1.y<<" "<<r1.width+r1.x<<endl;
+	//cout<<r2.height + r2.y<<" "<<r2.width+r2.x<<endl;
+	//cout<<r1.height + r1.y<<" "<<r1.width+r1.x<<endl;
 
 	Rect r = boundingRect(s1_tri);
 	Rect rr = boundingRect(s2_tri);
@@ -226,20 +230,20 @@ void target_to_target(std::vector<Point2f> & t1_tri,std::vector<Point2f> & s1_tr
     Mat mask = Mat::zeros(r1.height, r1.width, CV_32FC3);
     fillConvexPoly(mask, new_riint, Scalar(1.0, 1.0, 1.0), 16, 0);
     
-	cout<<"begin copy"<<endl;
+	//cout<<"begin copy"<<endl;
     Mat img1Rect;
 	face_t1(r1).copyTo(img1Rect);
     // mask the outer area of the triangle 
 	multiply(img1Rect,mask,img1Rect);
 
     Mat warpImage1 = Mat::zeros(r2.height, r2.width, img1Rect.type());
-    cout<<"begin affine"<<endl;
+    //cout<<"begin affine"<<endl;
     applyAffineTransform(warpImage1, img1Rect, new_r, new_rr);
-    cout<<"end affine"<<endl;
-	cout<<"add"<<endl;
-	cout<<r2.height + r2.y<<" "<<r2.width+r2.x<<endl;
-	cout<<r1.height + r1.y<<" "<<r1.width+r1.x<<endl;
-	cout<<face_t2.rows<< " "<<face_t2.cols<<endl;
+    //cout<<"end affine"<<endl;
+	//cout<<"add"<<endl;
+	//cout<<r2.height + r2.y<<" "<<r2.width+r2.x<<endl;
+	//cout<<r1.height + r1.y<<" "<<r1.width+r1.x<<endl;
+	//cout<<face_t2.rows<< " "<<face_t2.cols<<endl;
     face_t2(r2) = face_t2(r2) + warpImage1;
 }
 
@@ -257,6 +261,143 @@ void calculate_new_points(std::vector<std::vector<Point2f>> & t2_points,std::vec
 		p.x = round(std::max(p.x/t2_points[i].size(),float(0.0)));
 		p.y = round(std::max(p.y/t2_points[i].size(),float(0.0)));
 		t2_new_points.push_back(p);
-		cout<<t2_new_points[i].x<<" "<<t2_new_points[i].y<<endl;
+		//cout<<t2_new_points[i].x<<" "<<t2_new_points[i].y<<endl;
 	}	
+}
+
+void change_face(std::vector<Point2f> & src_tri,std::vector<Point2f> & dst_tri,  Mat & src_face, Mat &dst_face, std::vector<Point2f> & src_3,std::vector<Point2f> & dst_3){
+	//cout<<"begin rect"<<endl;
+	Rect r1 = boundingRect(src_tri);
+	Rect rr = boundingRect(dst_tri);
+	/*
+	std::vector<Point> new_riint;
+	for (int i = 0; i < src_tri.size(); i++) {
+			new_riint.push_back(Point(dst_tri[i].x, dst_tri[i].y));
+	}
+	*/
+	std::vector<Point2f> new_r1,new_rr;
+	std::vector<Point2f> src3p,dst3p;
+	std::vector<Point> new_riint;
+	for (int i = 0; i < src_tri.size(); i++) {
+			new_r1.push_back(Point2f(src_tri[i].x - r1.x, src_tri[i].y - r1.y));
+			new_rr.push_back(Point2f(dst_tri[i].x - rr.x, dst_tri[i].y - rr.y));
+			new_riint.push_back(Point(dst_tri[i].x - rr.x, dst_tri[i].y - rr.y));
+	}
+	for (int i=0;i<2;i++){
+		src3p.push_back(Point2f(src_3[i].x - r1.x, src_3[i].y - r1.y));
+		dst3p.push_back(Point2f(dst_3[i].x - rr.x, dst_3[i].y - rr.y));
+		//cout<<src3p[i].x<<" "<<src3p[i].y<<endl;
+		//cout<<dst3p[i].x<<" "<<dst3p[i].y<<endl;
+	}
+	
+	//cout<<"begin mask"<<endl;
+    Mat mask = Mat::zeros(rr.height,rr.width, CV_32FC3);
+    fillConvexPoly(mask, new_riint, Scalar(1.0, 1.0, 1.0), 16, 0);
+	imshow("poly",mask);
+	waitKey(0);
+    
+	//cout<<"begin copy"<<endl;
+    Mat img1Rect;
+	src_face(r1).copyTo(img1Rect);
+    Mat warpImage1 = Mat::zeros(rr.height,rr.width, img1Rect.type());
+
+    //cout<<"begin affine"<<endl;
+	Mat warp = Mat::zeros(2,3,CV_32F);
+	get_face_change_matrix(src_3, dst_3, warp);
+	//similarityTransform(src_3, dst_3, warp);//estimateRigidTransform(src3p,dst3p,false);
+	//cout<<warp.rows<<" "<<warp.cols<<endl;
+	//cout<<warp.at<float>(0,0)<<" "<<warp.at<float>(0,1)<<" "<<warp.at<float>(0,2)<<endl;
+	//cout<<warp.at<float>(1,0)<<" "<<warp.at<float>(1,1)<<" "<<warp.at<float>(1,2)<<endl;
+	//Mat warp = getAffineTransform(src3p,dst3p);
+	//cout<<"begin affine2"<<endl;
+
+    warpAffine(img1Rect,warpImage1,warp,warpImage1.size(), INTER_MAX, BORDER_TRANSPARENT);
+	Mat temp;
+	warpImage1.convertTo(temp,CV_8UC3);
+	imshow("temp",temp);
+	waitKey(0);
+    //cout<<"end affine"<<endl;
+	//cout<<"multiply1"<<endl;
+    multiply(warpImage1,mask, warpImage1);
+	//cout<<"multiply2"<<endl;
+    try{
+		multiply(dst_face(rr), Scalar(1.0,1.0,1.0) - mask, dst_face(rr));
+		//cout<<"add"<<endl;
+		dst_face(rr) = dst_face(rr) + warpImage1;
+   	}catch(...)
+	{
+		cout<<"WARNING!!!!!!!!! in transfer to source"<<endl;
+	}
+    
+}
+
+void similarityTransform(std::vector<cv::Point2f>& inPoints, std::vector<cv::Point2f>& outPoints, cv::Mat &tform)
+{
+    
+    double s60 = sin(60 * M_PI / 180.0);
+    double c60 = cos(60 * M_PI / 180.0);
+    
+    std::vector <Point2f> inPts = inPoints;
+    std::vector <Point2f> outPts = outPoints;
+    
+    inPts.push_back(cv::Point2f(0,0));
+    outPts.push_back(cv::Point2f(0,0));
+    
+    
+    inPts[2].x =  c60 * (inPts[0].x - inPts[1].x) - s60 * (inPts[0].y - inPts[1].y) + inPts[1].x;
+    inPts[2].y =  s60 * (inPts[0].x - inPts[1].x) + c60 * (inPts[0].y - inPts[1].y) + inPts[1].y;
+    
+    outPts[2].x =  c60 * (outPts[0].x - outPts[1].x) - s60 * (outPts[0].y - outPts[1].y) + outPts[1].x;
+    outPts[2].y =  s60 * (outPts[0].x - outPts[1].x) + c60 * (outPts[0].y - outPts[1].y) + outPts[1].y;
+    
+    
+    //tform = getAffineTransform(inPts,outPts);// cv::estimateRigidTransform(inPts, outPts, true);
+	tform = myGetAffineTransform(inPts,outPts,3);
+}
+
+void get_face_change_matrix(std::vector<cv::Point2f>& inPoints, std::vector<cv::Point2f>& outPoints, cv::Mat &tform){
+	// calculate a matrix from in to out 
+	double l1 = sqrt(pow(fabs(inPoints[0].x-inPoints[1].x),2) + pow(fabs(inPoints[0].y-inPoints[1].y),2));
+	double l2 = sqrt(pow(fabs(outPoints[0].x-outPoints[1].x),2) + pow(fabs(outPoints[0].y-outPoints[1].y),2));
+	double scale = l2/l1;
+
+	double l12 = (inPoints[0].x-inPoints[1].x)*(outPoints[0].x-outPoints[1].x) + (inPoints[0].y-inPoints[0].y)*(outPoints[0].y-outPoints[1].y);
+	double costheta = l12/(l1*l2);
+	double theta = acos(costheta);
+	double x = scale*inPoints[0].x- outPoints[0].x;
+	double y = scale*inPoints[0].y- outPoints[0].y;
+
+	tform.at<float>(0,0) = scale * cos(theta);
+	tform.at<float>(0,1) = -scale * sin(theta);
+	tform.at<float>(0,2) = 0;
+	tform.at<float>(1,0) = scale * (sin(theta));
+	tform.at<float>(1,1) = scale * cos(theta);
+	tform.at<float>(1,2) = 0;
+}
+
+// make the border of the face more smooth (cover the black holes)
+void linear_face_contours(std::vector<Point2f> &ps,Mat &input_bad,Mat &input_good, Mat &output){
+	Mat mask = Mat::zeros(input_good.rows,input_good.cols,CV_32FC3);
+	cv::Scalar mask_color(1, 1, 1);
+	for(int i=0;i<ps.size();i++){
+		Point2f p1 = ps[i];
+		Point2f p2;
+		if (i==ps.size()-1){
+			p2 = ps[0];
+		}
+		else{
+			p2 = ps[i+1];
+		}
+		cv::line(mask, p1, p2, mask_color, 1, CV_AA, 0);
+	}
+	dilate(mask,mask,Mat(),Point(-1,-1),8,BORDER_CONSTANT);
+	Mat temp1 = input_bad.clone();
+	Mat temp2 = input_good.clone();
+	multiply(temp1,mask,temp1);
+	multiply(temp2,mask,temp2);
+	temp1 = 0.01*temp1 + 0.99*temp2;
+	Mat temp3 = input_bad.clone();
+	multiply(temp3,mask_color-mask,temp3);
+	output = temp3+temp1;
+	
 }

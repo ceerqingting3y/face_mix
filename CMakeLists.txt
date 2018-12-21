@@ -35,7 +35,6 @@ target_link_libraries(generate_standard_face dlib::dlib ${OpenCV_LIBS})
 set_target_properties(generate_standard_face PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 
-
 add_executable(warp_to_happy warp_to_happy.cpp src/delaunay.cpp src/utils.cpp)
 target_link_libraries(warp_to_happy dlib::dlib ${OpenCV_LIBS})
 set_target_properties(warp_to_happy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
@@ -50,3 +49,8 @@ set_target_properties(wavelet_sample PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAK
 add_executable(write_delaunay write_delaunay.cpp src/delaunay.cpp src/utils.cpp)
 target_link_libraries(write_delaunay dlib::dlib ${OpenCV_LIBS})
 set_target_properties(write_delaunay PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+add_executable(average faceAverage.cpp )
+target_link_libraries(average dlib::dlib ${OpenCV_LIBS})
+set_target_properties(average PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
