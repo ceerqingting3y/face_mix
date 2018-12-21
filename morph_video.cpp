@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
         base.convertTo(m2, CV_8UC3);
 
         Point2f center(center_of_points(points_base));
-        Point centerInt((int)center.x, (int)center.y);
+        Point centerInt((int)center.x + 20, (int)center.y);
         mask.convertTo(mask, CV_8UC1, 256);
         output.convertTo(output, CV_8UC3);
         Mat mergedFaces;
