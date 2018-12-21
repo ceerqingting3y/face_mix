@@ -50,10 +50,7 @@ add_executable(write_delaunay write_delaunay.cpp src/delaunay.cpp src/utils.cpp)
 target_link_libraries(write_delaunay dlib::dlib ${OpenCV_LIBS})
 set_target_properties(write_delaunay PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-<<<<<<< HEAD
 add_executable(average faceAverage.cpp )
 target_link_libraries(average dlib::dlib ${OpenCV_LIBS})
 set_target_properties(average PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-=======
->>>>>>> 120815d2bd420873814525e6fd63c2cfbd4877a6

@@ -31,3 +31,4 @@ void calculate_new_points(std::vector<std::vector<Point2f>> & t2_points,std::vec
 void change_face(std::vector<Point2f> & src_tri,std::vector<Point2f> & dst_tri,  Mat & src_face, Mat &dst_face, std::vector<Point2f> & src_3,std::vector<Point2f> & dst_3);
 void similarityTransform(std::vector<cv::Point2f>& inPoints, std::vector<cv::Point2f>& outPoints, cv::Mat &tform);
 void get_face_change_matrix(std::vector<cv::Point2f>& inPoints, std::vector<cv::Point2f>& outPoints, cv::Mat &tform);
+void linear_face_contours(std::vector<Point2f> &ps,Mat &input_bad,Mat &input_good, Mat &output);
