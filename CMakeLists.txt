@@ -23,6 +23,7 @@ set_target_properties(static_transfer PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMA
 
 add_executable(active_transfer active_transfer.cpp src/delaunay.cpp src/utils.cpp src/dwt.cpp src/hist.cpp src/transfer.cpp)
 target_link_libraries(active_transfer dlib::dlib ${OpenCV_LIBS} )
+set_target_properties(active_transfer PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 add_executable(morph_video morph_video.cpp src/utils.cpp)
 target_link_libraries(morph_video dlib::dlib ${OpenCV_LIBS} )
@@ -49,10 +50,3 @@ set_target_properties(wavelet_sample PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAK
 add_executable(write_delaunay write_delaunay.cpp src/delaunay.cpp src/utils.cpp)
 target_link_libraries(write_delaunay dlib::dlib ${OpenCV_LIBS})
 set_target_properties(write_delaunay PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-
-
-
-add_executable(track_test track_test.cpp src/delaunay.cpp src/utils.cpp)
-target_link_libraries(track_test dlib::dlib ${OpenCV_LIBS})
-set_target_properties(track_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-

@@ -33,6 +33,7 @@
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_processing/render_face_detections.h>
 #include <dlib/opencv.h>
+#include <cstdlib>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
@@ -41,6 +42,8 @@
 using namespace dlib;
 using namespace cv;
 using namespace std;
+
+bool seamless = false;
 
 std::vector<Point2f> readPoints(string pointsFileName) {
   std::vector<Point2f> points;
@@ -141,11 +144,19 @@ std::vector<Point2f> findLandmarks(Mat &src, frontal_face_detector &detector,
 }
 
 int main(int argc, char **argv) {
-  if (argc == 1) {
-    cerr << "expected name of base image\n example: "
-            "./bin/morph_videosphotos/monalisa.jpg"
+  // between 0-1 gives the average weight of each image
+  double alpha = 0.1;
+  if (argc <= 3) {
+    cerr << "Format should be: ./bin/morph_video <t|f> <imgpath> <%alpha>"
          << endl;
     return 1;
+  }
+  alpha = atoi(argv[3]) / 100.0;
+  alpha = min(alpha, 1.0);
+  alpha = max(alpha, 0.0);
+
+  if (argv[1][0] == 't') {
+    seamless = true;
   }
   try {
     VideoCapture cap(0);
@@ -161,7 +172,7 @@ int main(int argc, char **argv) {
     shape_predictor pose_model;
     deserialize("shape_predictor_68_face_landmarks.dat") >> pose_model;
 
-    string filename(argv[1]);
+    string filename(argv[2]);
     Mat base = imread(filename);
     std::vector<Point2f> points_base =
         findLandmarks(base, detector, pose_model);
@@ -201,8 +212,6 @@ int main(int argc, char **argv) {
         Mat output = base.clone();
         Mat mask = Mat::zeros(base.size(), CV_32FC3);
 
-        double alpha = 0.2;
-
         // empty average image
         Mat imgMorph = Mat::zeros(src.size(), CV_32FC3);
 
@@ -215,7 +224,13 @@ int main(int argc, char **argv) {
         Point centerInt((int)center.x, (int)center.y);
         mask.convertTo(mask, CV_8UC1, 256);
         output.convertTo(output, CV_8UC3);
-        seamlessClone(output, m2, mask, centerInt, output, NORMAL_CLONE);
+        Mat mergedFaces;
+        imshow("original", src / 255);
+        multiply(output, mask / 255, mergedFaces);
+        imshow("Merged images", mergedFaces);
+        if (seamless) {
+          seamlessClone(output, m2, mask, centerInt, output, NORMAL_CLONE);
+        }
         imshow("Morphed Face", output);
         // Display it all on the screen
         waitKey(30);
