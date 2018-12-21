@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
   string filename2("photos/mona.jpg");
 
   // alpha controls the degree of morph
-  double alpha = 1;
+  double alpha = .3;
 
   // Read input images
   Mat src = imread(filename1);
@@ -131,7 +131,6 @@ int main(int argc, char **argv) {
   seamlessClone(output, m2, mask, centerInt, output, NORMAL_CLONE);
   imshow("Morphed Face", output);
 
-  imwrite("photos/wagnelisa.jpg", base);
   waitKey(0);
 
   return 0;

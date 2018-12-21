@@ -130,17 +130,23 @@ void morphFaces(Mat &src, Mat &base, Mat &output, Mat &allMask,
 
 std::vector<Point2f> findLandmarks(Mat &src, frontal_face_detector &detector,
                                    shape_predictor &pose_model) {
-  cout << "here" << endl;
   cv_image<bgr_pixel> cimg(src);
-  cout << "here" << endl;
   std::vector<dlib::rectangle> faces = detector(cimg);
-  cout << "here" << endl;
-  auto face_landmarks = pose_model(cimg, faces[0]);
-  cout << "here" << endl;
-  return vectorize_landmarks(face_landmarks);
+  if (faces.size() > 0) {
+    auto face_landmarks = pose_model(cimg, faces[0]);
+    return vectorize_landmarks(face_landmarks);
+  } else {
+    return std::vector<Point2f>();
+  }
 }
 
-int main() {
+int main(int argc, char **argv) {
+  if (argc == 1) {
+    cerr << "expected name of base image\n example: "
+            "./bin/morph_videosphotos/monalisa.jpg"
+         << endl;
+    return 1;
+  }
   try {
     VideoCapture cap(0);
     if (!cap.isOpened()) {
@@ -155,6 +161,17 @@ int main() {
     shape_predictor pose_model;
     deserialize("shape_predictor_68_face_landmarks.dat") >> pose_model;
 
+    string filename(argv[1]);
+    Mat base = imread(filename);
+    std::vector<Point2f> points_base =
+        findLandmarks(base, detector, pose_model);
+    base.convertTo(base, CV_32FC3);
+
+    if (points_base.size() == 0) {
+      cerr << "No face found in the base image" << endl;
+      return 1;
+    }
+
     // Grab and process frames until the\main window is closed by the user.
     while (!win.is_closed()) {
       // Grab a frame
@@ -162,42 +179,39 @@ int main() {
       if (!cap.read(src)) {
         break;
       }
-      cv_image<bgr_pixel> cimg(src);
+      // cv_image<bgr_pixel> cimg(src);
       Size size = src.size();
       Rect rect(0, 0, size.width, size.height);
 
       // Detect faces
-      std::vector<dlib::rectangle> faces = detector(cimg);
+      // std::vector<dlib::rectangle> faces = detector(cimg);
       // Find the pose of each face.
-      full_object_detection face_landmarks;
-      if (faces.size() > 0) {
-        face_landmarks = pose_model(cimg, faces[0]);
-        auto landmarks = vectorize_landmarks(face_landmarks);
+      // full_object_detection face_landmarks;
+      // face_landmarks = pose_model(cimg, faces[0]);
+      // auto landmarks = vectorize_landmarks(face_landmarks);
+      // auto landmarks = findLandmarks(src, detector, pose_model);
+      // Read input images
 
-        // Read input images
-        string filename2("photos/ted_cruz.jpg");
-        Mat base = imread(filename2);
+      std::vector<Point2f> points_src =
+          findLandmarks(src, detector, pose_model);
+
+      if (points_src.size() != 0) {
         // convert Mat to float data type
-        src.convertTo(src, CV_32F);
-        base.convertTo(base, CV_32F);
+        src.convertTo(src, CV_32FC3);
         Mat output = base.clone();
         Mat mask = Mat::zeros(base.size(), CV_32FC3);
 
-        double alpha = 0.1;
+        double alpha = 0.2;
 
         // empty average image
         Mat imgMorph = Mat::zeros(src.size(), CV_32FC3);
 
         // Read points
-        cout << src.size() << endl;
-        findLandmarks(src, detector, pose_model);
-        std::vector<Point2f> points1 = landmarks;
-        std::vector<Point2f> points2 = readPoints(filename2 + ".txt");
-        morphFaces(src, base, output, mask, points1, points2, alpha);
+        morphFaces(src, base, output, mask, points_src, points_base, alpha);
         Mat m1, m2;
         base.convertTo(m2, CV_8UC3);
 
-        Point2f center(center_of_points(points2));
+        Point2f center(center_of_points(points_base));
         Point centerInt((int)center.x, (int)center.y);
         mask.convertTo(mask, CV_8UC1, 256);
         output.convertTo(output, CV_8UC3);

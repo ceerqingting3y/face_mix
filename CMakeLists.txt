@@ -50,3 +50,9 @@ add_executable(write_delaunay write_delaunay.cpp src/delaunay.cpp src/utils.cpp)
 target_link_libraries(write_delaunay dlib::dlib ${OpenCV_LIBS})
 set_target_properties(write_delaunay PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+
+
+add_executable(track_test track_test.cpp src/delaunay.cpp src/utils.cpp)
+target_link_libraries(track_test dlib::dlib ${OpenCV_LIBS})
+set_target_properties(track_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
