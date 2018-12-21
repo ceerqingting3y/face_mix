@@ -28,5 +28,6 @@ void applyAffineTransform(Mat &warpImage, Mat &src, std::vector<Point2f> &srcTri
 void transfer_to_source(std::vector<Point2f> & src_tri,std::vector<Point2f> & dst_tri,  Mat & src_face, Mat &dst_face);
 void target_to_target(std::vector<Point2f> & t1_tri,std::vector<Point2f> & s1_tri, std::vector<Point2f> & s2_tri, std::vector<Point> & t_int, Mat & face_t1,Mat &face_t2, Mat & face_s1, Mat & face_s2);
 void calculate_new_points(std::vector<std::vector<Point2f>> & t2_points,std::vector<Point2f> &t2_new_points);
-
-
+void change_face(std::vector<Point2f> & src_tri,std::vector<Point2f> & dst_tri,  Mat & src_face, Mat &dst_face, std::vector<Point2f> & src_3,std::vector<Point2f> & dst_3);
+void similarityTransform(std::vector<cv::Point2f>& inPoints, std::vector<cv::Point2f>& outPoints, cv::Mat &tform);
+void get_face_change_matrix(std::vector<cv::Point2f>& inPoints, std::vector<cv::Point2f>& outPoints, cv::Mat &tform);

@@ -67,7 +67,7 @@ int main() {
       cv::Rect rect(0, 0, size.width, size.height);
 
       // Detect faces
-      std::vector<rectangle> faces = detector(cimg);
+      std::vector<dlib::rectangle> faces = detector(cimg);
       // Find the pose of each face.
       full_object_detection face_landmarks;
       if (faces.size() > 0) {
