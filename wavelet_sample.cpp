@@ -14,11 +14,7 @@ int main() {
   cvtColor(wag, wagGray, COLOR_RGB2GRAY);
   wagGray.convertTo(wagGray, CV_32FC1);
   Mat transform = Mat::zeros(wagGray.size(), CV_32FC1);
-  int iter = 1;
-  while (iter) {
-    cvHaarWavelet(wagGray, transform, iter);
-    imshow("Transform", transform / 255);
-    waitKey(0);
-    iter++;
-  }
+  cvHaarWavelet(wagGray, transform, 1);
+  imshow("Transform", transform / 255);
+  waitKey(0);
 }
