@@ -67,7 +67,6 @@ void applyAffineTransform(Mat &warpImage, Mat &src,
   warpAffine(src, warpImage, warpMat, warpImage.size(), INTER_LINEAR,
              BORDER_REFLECT_101);
 }
-
 // Warps and alpha blends triangular regions from src and base to img
 void warpFaces(Mat &src, Mat &output, std::vector<Point2f> &points1,
                std::vector<Point2f> &points2) {
@@ -132,7 +131,6 @@ int main() {
   std::vector<Point2f> points2 = readPoints("avg_face_shouting.txt");
   warpFaces(src, output, points1, points2);
   Mat difference;
-
   absdiff(shouting, output, difference);
   imshow("difference", difference);
   imshow("neutral", src);
